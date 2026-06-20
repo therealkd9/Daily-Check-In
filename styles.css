@@ -286,6 +286,26 @@ h2 { margin: 0; font-size: 18px; }
   font-size: 13px;
 }
 
+.banner {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--text);
+}
+.banner-error {
+  border-color: var(--rough);
+  background: rgba(245, 101, 101, 0.12);
+}
+.banner code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 13px;
+}
+
 @media (max-width: 560px) {
   .header { flex-direction: column; }
   .today { text-align: left; align-self: flex-start; }

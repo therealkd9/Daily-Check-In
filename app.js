@@ -1,5 +1,7 @@
-// Daily Check-In Dashboard
-// Tracks a once-a-day check-in for each person, stored in the browser.
+// Daily Check-In Dashboard — Supabase-backed.
+// Logs a once-a-day check-in for each person, stored in a shared Supabase table.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const PEOPLE = [
   { id: "reid", name: "Reid", color: "var(--reid)" },
@@ -12,7 +14,13 @@ const MOODS = [
   { id: "rough", label: "Rough", emoji: "😞" },
 ];
 
-const STORAGE_KEY = "daily-check-in.v1";
+// --- Supabase client ---
+const URL = window.SUPABASE_URL;
+const KEY = window.SUPABASE_ANON_KEY;
+const isConfigured =
+  URL && KEY && !URL.startsWith("YOUR_") && !KEY.startsWith("YOUR_");
+
+const supabase = isConfigured ? createClient(URL, KEY) : null;
 
 // --- Date helpers (use local date, not UTC) ---
 function todayKey(d = new Date()) {
@@ -33,20 +41,8 @@ function prettyDate(key) {
   });
 }
 
-// --- Storage: { "YYYY-MM-DD": { reid: {mood, note}, kaden: {...} } } ---
-function loadData() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-  } catch {
-    return {};
-  }
-}
-
-function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-let data = loadData();
+// --- Local cache, shaped { "YYYY-MM-DD": { reid: {mood, note}, kaden: {...} } } ---
+let data = {};
 // Draft mood selection before saving, per person.
 const drafts = {};
 
@@ -54,24 +50,45 @@ function getEntry(dateKey, personId) {
   return (data[dateKey] && data[dateKey][personId]) || null;
 }
 
-function setEntry(dateKey, personId, entry) {
-  if (!data[dateKey]) data[dateKey] = {};
-  data[dateKey][personId] = entry;
-  saveData(data);
+// Pull all check-ins from Supabase into the local cache.
+async function fetchData() {
+  if (!supabase) return;
+  const { data: rows, error } = await supabase
+    .from("check_ins")
+    .select("person, check_date, mood, note")
+    .order("check_date", { ascending: false });
+
+  if (error) {
+    console.error("Failed to load check-ins:", error);
+    showBanner(`Could not load check-ins: ${error.message}`, "error");
+    return;
+  }
+
+  data = {};
+  for (const row of rows) {
+    if (!data[row.check_date]) data[row.check_date] = {};
+    data[row.check_date][row.person] = { mood: row.mood, note: row.note || "" };
+  }
+}
+
+// Insert or update today's check-in for a person.
+async function upsertEntry(dateKey, personId, mood, note) {
+  const { error } = await supabase
+    .from("check_ins")
+    .upsert(
+      { person: personId, check_date: dateKey, mood, note },
+      { onConflict: "person,check_date" }
+    );
+  if (error) throw error;
 }
 
 // Count consecutive days (ending today) with a check-in for a person.
 function streakFor(personId) {
   let count = 0;
   const d = new Date();
-  while (true) {
-    const key = todayKey(d);
-    if (getEntry(key, personId)) {
-      count++;
-      d.setDate(d.getDate() - 1);
-    } else {
-      break;
-    }
+  while (getEntry(todayKey(d), personId)) {
+    count++;
+    d.setDate(d.getDate() - 1);
   }
   return count;
 }
@@ -121,7 +138,7 @@ function renderToday() {
 
       <div class="field">
         <span class="field-label">Notes</span>
-        <textarea data-note="${person.id}" placeholder="What's going on with ${person.name}?">${note}</textarea>
+        <textarea data-note="${person.id}" placeholder="What's going on with ${person.name}?">${escapeHtml(note)}</textarea>
       </div>
 
       <div class="card-actions">
@@ -153,7 +170,7 @@ function wireCardEvents() {
   });
 
   document.querySelectorAll("[data-save]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const personId = btn.dataset.save;
       const mood = drafts[personId] || (getEntry(todayKey(), personId) || {}).mood;
       if (!mood) {
@@ -161,15 +178,26 @@ function wireCardEvents() {
         return;
       }
       const note = document.querySelector(`[data-note="${personId}"]`).value.trim();
-      setEntry(todayKey(), personId, { mood, note, savedAt: new Date().toISOString() });
 
-      const flag = document.querySelector(`[data-flag="${personId}"]`);
-      flag.classList.add("show");
-      setTimeout(() => flag.classList.remove("show"), 1500);
-
-      renderHistory();
-      // Refresh status line + streak.
-      renderToday();
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = "Saving…";
+      try {
+        await upsertEntry(todayKey(), personId, mood, note);
+        await fetchData();
+        const flag = document.querySelector(`[data-flag="${personId}"]`);
+        if (flag) {
+          flag.classList.add("show");
+          setTimeout(() => flag.classList.remove("show"), 1500);
+        }
+        renderToday();
+        renderHistory();
+      } catch (err) {
+        console.error(err);
+        alert(`Could not save: ${err.message}`);
+        btn.disabled = false;
+        btn.textContent = original;
+      }
     });
   });
 }
@@ -213,20 +241,52 @@ function renderFooter() {
 
 function escapeHtml(str) {
   const div = document.createElement("div");
-  div.textContent = str;
+  div.textContent = str ?? "";
   return div.innerHTML;
 }
 
-document.getElementById("clear-data").addEventListener("click", () => {
-  if (confirm("Delete all saved check-ins? This can't be undone.")) {
-    localStorage.removeItem(STORAGE_KEY);
-    data = {};
-    Object.keys(drafts).forEach((k) => delete drafts[k]);
-    renderToday();
-    renderHistory();
+function showBanner(message, kind = "info") {
+  let banner = document.getElementById("banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "banner";
+    banner.className = "banner";
+    document.querySelector(".app").prepend(banner);
   }
+  banner.classList.toggle("banner-error", kind === "error");
+  banner.innerHTML = message;
+}
+
+// Clear all check-ins (deletes every row).
+document.getElementById("clear-data").addEventListener("click", async () => {
+  if (!supabase) return;
+  if (!confirm("Delete ALL saved check-ins for everyone? This can't be undone.")) return;
+  const { error } = await supabase.from("check_ins").delete().not("id", "is", null);
+  if (error) {
+    alert(`Could not clear data: ${error.message}`);
+    return;
+  }
+  await fetchData();
+  Object.keys(drafts).forEach((k) => delete drafts[k]);
+  renderToday();
+  renderHistory();
 });
 
-// Initial render
-renderToday();
-renderHistory();
+// --- Boot ---
+async function init() {
+  if (!isConfigured) {
+    showBanner(
+      "⚠️ Supabase isn't configured yet. Add your Project URL and anon key in " +
+        "<code>config.js</code> (and run <code>supabase-schema.sql</code> in your Supabase project).",
+      "error"
+    );
+    renderToday();
+    renderHistory();
+    return;
+  }
+  await fetchData();
+  renderToday();
+  renderHistory();
+}
+
+init();
