@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Check-In Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div>
+        <h1>Daily Check-In</h1>
+        <p class="subtitle">Checking in on Reid &amp; Kaden, one day at a time.</p>
+      </div>
+      <div class="today">
+        <span class="today-label">Today</span>
+        <span id="today-date" class="today-date"></span>
+      </div>
+    </header>
+
+    <section class="cards" id="cards"></section>
+
+    <section class="history">
+      <div class="history-head">
+        <h2>Recent History</h2>
+        <button id="clear-data" class="ghost-btn" title="Remove all saved check-ins">Clear all data</button>
+      </div>
+      <div id="history-list" class="history-list"></div>
+    </section>
+
+    <footer class="footer">
+      <span id="streak-summary"></span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
