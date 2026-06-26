@@ -3,38 +3,137 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily Check-In Dashboard</title>
+  <title>Evangeline Home Center — Live P&amp;L</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f7a4d'/%3E%3Ctext x='50%25' y='52%25' font-family='Arial,sans-serif' font-size='30' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'%3EEH%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
+    <!-- ───────────────────────── Header ───────────────────────── -->
     <header class="header">
-      <div>
-        <h1>Daily Check-In</h1>
-        <p class="subtitle">Checking in on Reid &amp; Kaden, one day at a time.</p>
+      <div class="brand">
+        <div class="brand-mark">EH</div>
+        <div>
+          <h1>Evangeline Home Center</h1>
+          <p class="subtitle">Live Profit &amp; Loss · <span id="store-location">Main Street Store</span></p>
+        </div>
       </div>
-      <div class="today">
-        <span class="today-label">Today</span>
-        <span id="today-date" class="today-date"></span>
+
+      <div class="header-right">
+        <span class="demo-badge" title="Figures are simulated for demonstration">DEMO DATA</span>
+        <div class="clock">
+          <span id="store-status" class="store-status">— —</span>
+          <span id="as-of" class="as-of">as of —</span>
+        </div>
       </div>
     </header>
 
-    <section class="cards" id="cards"></section>
-
-    <section class="history">
-      <div class="history-head">
-        <h2>Recent History</h2>
-        <button id="clear-data" class="ghost-btn" title="Remove all saved check-ins">Clear all data</button>
+    <!-- ───────────────────── Controls / status bar ───────────────────── -->
+    <div class="controlbar">
+      <div class="live-pill" id="live-pill">
+        <span class="live-dot"></span>
+        <span id="live-label">LIVE</span>
       </div>
-      <div id="history-list" class="history-list"></div>
+      <div class="control-group" role="group" aria-label="Playback">
+        <button class="ctl-btn is-active" id="btn-live" type="button">● Live</button>
+        <button class="ctl-btn" id="btn-replay" type="button">⏩ Replay the day</button>
+      </div>
+      <div class="day-progress">
+        <span class="dp-label">Business day</span>
+        <div class="dp-track"><div class="dp-fill" id="day-fill"></div></div>
+        <span class="dp-pct" id="day-pct">0%</span>
+      </div>
+    </div>
+
+    <!-- ───────────────────────── KPI tiles ───────────────────────── -->
+    <section class="kpis" id="kpis">
+      <div class="kpi" data-k="sales">
+        <span class="kpi-label">Net Sales</span>
+        <span class="kpi-value" id="kpi-sales">$0</span>
+        <span class="kpi-sub" id="kpi-sales-sub">0 transactions today</span>
+      </div>
+      <div class="kpi" data-k="gross">
+        <span class="kpi-label">Gross Profit</span>
+        <span class="kpi-value" id="kpi-gross">$0</span>
+        <span class="kpi-sub" id="kpi-gross-sub">0.0% margin</span>
+      </div>
+      <div class="kpi" data-k="opex">
+        <span class="kpi-label">Operating Expenses</span>
+        <span class="kpi-value" id="kpi-opex">$0</span>
+        <span class="kpi-sub" id="kpi-opex-sub">accrued so far</span>
+      </div>
+      <div class="kpi kpi-hero" data-k="net">
+        <span class="kpi-label">Net Profit <span class="today">today</span></span>
+        <span class="kpi-value" id="kpi-net">$0</span>
+        <span class="kpi-sub" id="kpi-net-sub">0.0% net margin</span>
+      </div>
     </section>
 
+    <!-- ───────────────────────── Main grid ───────────────────────── -->
+    <div class="grid">
+      <!-- P&L statement -->
+      <section class="panel pnl">
+        <div class="panel-head">
+          <h2>Profit &amp; Loss Statement</h2>
+          <span class="panel-note">Today so far · projected end of day</span>
+        </div>
+        <table class="pnl-table">
+          <thead>
+            <tr>
+              <th class="ln">Line item</th>
+              <th class="num">Today</th>
+              <th class="num pct-col">% NS</th>
+              <th class="num">Projected EOD</th>
+            </tr>
+          </thead>
+          <tbody id="pnl-body"><!-- rows injected --></tbody>
+        </table>
+      </section>
+
+      <!-- Revenue chart -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Revenue Through the Day</h2>
+          <span class="panel-note">Cumulative net sales · solid = realized</span>
+        </div>
+        <div class="chart-wrap"><canvas id="revChart"></canvas></div>
+      </section>
+
+      <!-- Department donut -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Sales by Department</h2>
+          <span class="panel-note" id="dept-total-note">—</span>
+        </div>
+        <div class="chart-wrap chart-wrap--donut"><canvas id="deptChart"></canvas></div>
+      </section>
+
+      <!-- Profit waterfall -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>From Sales to Profit</h2>
+          <span class="panel-note">Where today's dollars go</span>
+        </div>
+        <div class="chart-wrap"><canvas id="waterfallChart"></canvas></div>
+      </section>
+
+      <!-- Live transaction feed -->
+      <section class="panel feed-panel">
+        <div class="panel-head">
+          <h2>Live Sales Feed</h2>
+          <span class="panel-note" id="feed-rate">—</span>
+        </div>
+        <ul class="feed" id="feed"><!-- transactions injected --></ul>
+      </section>
+    </div>
+
     <footer class="footer">
-      <span id="streak-summary"></span>
+      <span>Evangeline Home Center · Live P&amp;L demo. All figures are simulated, generated fresh each business day.</span>
     </footer>
   </div>
 
-  <script src="config.js"></script>
-  <script type="module" src="app.js"></script>
+  <!-- Chart.js is vendored locally so the demo works without any CDN/network. -->
+  <script src="chart.umd.min.js"></script>
+  <script src="dashboard.js"></script>
 </body>
 </html>
