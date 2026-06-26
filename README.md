@@ -1,90 +1,78 @@
-# Daily Check-In Dashboard
+# Evangeline Home Center — Live P&L Dashboard
 
-A simple dashboard for checking in on **Reid** and **Kaden** every day, backed by
-**Supabase** (database) and deployed as a static site on **Vercel**.
+A clean, executive dashboard that shows **Evangeline Home Center's Profit &
+Loss live throughout the business day**. Sales tick in through the day, and the
+P&L statement, KPIs, charts, and a live sales feed all update in real time.
 
-## What it does
+Built as a **single static site** — no backend, no setup, no login. Open it and
+the day starts playing.
 
-- **Daily check-in cards** for Reid and Kaden — log a mood (Good / Okay / Rough) and a note.
-- **Streak tracking** — consecutive days each person has been checked in on.
-- **Shared history** — last 14 days of check-ins, synced across every device via Supabase.
-- **No login** — anyone with the link can view and add check-ins (single shared dashboard).
+> **Demo data.** All figures are *simulated*. The dashboard generates a
+> realistic full day of sales for the store (seeded by the calendar date, so a
+> given day is consistent), then reveals each sale in real time as the clock
+> moves. To plug in real numbers later, see [Going live with real data](#going-live-with-real-data).
 
-## Architecture
+## What it shows
 
-```
-Browser (index.html + app.js)
-        │  @supabase/supabase-js (anon key)
-        ▼
-Supabase  →  Postgres table `check_ins`  (Row Level Security: public read/write)
-```
+- **Four headline KPIs** — Net Sales, Gross Profit (with margin), Operating
+  Expenses accrued so far, and **Net Profit today** (with net margin).
+- **Full P&L statement** — Gross Sales → Returns → Net Sales → COGS → Gross
+  Profit → Operating Expenses → **Net Operating Income**, with both *today so
+  far* and *projected end-of-day* columns plus % of net sales.
+- **Revenue through the day** — cumulative net sales by hour; solid line is what
+  has actually been rung up, dashed line is the projected full day.
+- **Sales by department** — Lumber, Hardware, Paint, Plumbing, Electrical,
+  Garden, Appliances, Flooring.
+- **From sales to profit** — a waterfall from Net Sales down to Net Profit.
+- **Live sales feed** — individual transactions (and returns) as they happen.
 
-There is **no server code** — the page talks to Supabase directly from the browser.
+## Controls
 
----
+- **● Live** — tracks the real time of day. Open it at 2pm and you see the day
+  up to 2pm, then it keeps ticking.
+- **⏩ Replay the day** — fast-forwards the whole business day (7am–8pm) in about
+  90 seconds. Great for showing the full arc in a quick demo.
+- A **business-day progress bar** and an **Open / Closed / Day Complete** status
+  show where in the day you are.
 
-## 1. Set up Supabase
+## Run it locally
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. In the dashboard, open **SQL Editor → New query**, paste the contents of
-   [`supabase-schema.sql`](./supabase-schema.sql), and click **Run**.
-   This creates the `check_ins` table and the public read/write RLS policies.
-3. Go to **Project Settings → API** and copy:
-   - **Project URL**
-   - **Project API keys → `anon` `public`**
-
-> The `anon` key is meant to be public and is safe to ship in the browser.
-> Access is controlled by Row Level Security, not by hiding the key.
-> **Never** put the `service_role` key in this app.
-
-## 2. Configure the app
-
-Open [`config.js`](./config.js) and paste your values:
-
-```js
-window.SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
-window.SUPABASE_ANON_KEY = "eyJhbGciOi...your anon key...";
-```
-
-## 3. Run locally
-
-It's a static site — serve the folder with anything, e.g.:
+It's a static site — serve the folder with anything:
 
 ```bash
 python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-(Open via a server, not `file://`, so the ES module import works.)
+(Charts load Chart.js from a CDN, so the machine viewing it needs internet.)
 
-## 4. Deploy to Vercel
+## Deploy to Vercel
 
-1. Push this repo to GitHub (already done if you're reading this on GitHub).
-2. In [vercel.com](https://vercel.com), **Add New → Project → Import** this repo.
-3. Framework preset: **Other** (it's a static site — no build step needed).
-4. Click **Deploy**. Vercel serves the static files directly.
-
-Every push to your branch redeploys automatically.
-
-> Because this is a static site, `config.js` is committed with your Supabase
-> URL + anon key (both public-safe). If you'd rather not commit them, you can
-> instead inject them at build time, but for the anon key it isn't necessary.
-
----
+1. Push this repo to GitHub.
+2. In [vercel.com](https://vercel.com): **Add New → Project → Import** this repo.
+3. Framework preset: **Other** (static site, no build step).
+4. **Deploy.** Every push redeploys automatically.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `index.html` | Page structure |
-| `styles.css` | Styling / layout |
-| `app.js` | Check-in logic + Supabase queries |
-| `config.js` | Your Supabase URL + anon key |
-| `supabase-schema.sql` | Database table + RLS policies |
+| `styles.css` | Executive light theme / layout |
+| `dashboard.js` | Day simulation, live P&L, charts, sales feed |
 | `vercel.json` | Vercel static-site config |
 
-## Possible next steps
+## Going live with real data
 
-- **Add Supabase Auth** (email magic link) to make it private + per-user.
-- **Daily reminder** email/notification via a Supabase Edge Function + cron.
-- **Charts/trends** over weeks and months.
+The whole simulation lives in `dashboard.js`. To drive the dashboard from real
+numbers instead:
+
+- **The business model** (departments, margins, average tickets, hourly
+  traffic, and daily operating expenses) is defined at the top of
+  `dashboard.js` in `DEPARTMENTS`, `HOUR_WEIGHTS`, and `OPEX`. Tune these to
+  match the store.
+- **The data source** is `buildDay()`, which returns a time-sorted list of
+  `{ ts, deptId, amount, cogs, isReturn }` transactions. Replace it with a feed
+  from your point-of-sale / accounting system (e.g. a periodic `fetch()` to an
+  API), and the rest of the dashboard — KPIs, P&L, charts, feed — keeps working
+  unchanged.
