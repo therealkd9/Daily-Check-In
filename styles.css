@@ -208,6 +208,89 @@ h1 {
 .kpi-value.neg.flash { animation: flashNeg 0.55s ease; }
 @keyframes flashNeg { 0% { color: #e05a47; } 100% { color: var(--neg); } }
 
+/* --------------------------- Section heads ---------------------------- */
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin: 4px 2px 14px;
+}
+.section-head h2 { margin: 0; font-size: 17px; color: var(--ink); }
+.section-note { font-size: 12.5px; color: var(--muted); }
+
+/* --------------------------- Company grid ----------------------------- */
+.company-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.company-card {
+  --c: var(--accent);
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px 14px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.company-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--c);
+}
+.company-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--c);
+  box-shadow: 0 2px 4px rgba(20,32,44,0.06), 0 12px 26px rgba(20,32,44,0.12);
+}
+
+.cc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.cc-id { display: flex; flex-direction: column; gap: 2px; }
+.cc-name { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: -0.2px; }
+.cc-type { font-size: 12px; color: var(--muted); }
+.cc-status { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.cc-status.open { color: var(--accent); }
+.cc-status.closed { color: var(--faint); }
+
+.cc-spark { height: 56px; margin: 12px 0 10px; }
+
+.cc-stats { display: flex; gap: 18px; }
+.cc-stat { display: flex; flex-direction: column; gap: 1px; }
+.cc-stat-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted);
+}
+.cc-stat-val {
+  font-size: 21px; font-weight: 800; color: var(--ink);
+  letter-spacing: -0.4px; font-variant-numeric: tabular-nums;
+}
+.cc-stat-val.neg { color: var(--neg); }
+.cc-stat-val.flash { animation: flash 0.55s ease; }
+.cc-stat-sub { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.cc-open {
+  display: block; margin-top: 12px;
+  font-size: 12px; font-weight: 600; color: var(--c);
+  opacity: 0.85;
+}
+
+/* ----------------------------- Detail head ---------------------------- */
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+  text-decoration: none; margin-bottom: 14px;
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 9px;
+  background: var(--panel);
+}
+.back-link:hover { color: var(--accent); border-color: var(--accent); }
+
+.detail-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.detail-name { margin: 0; font-size: 22px; color: var(--ink); letter-spacing: -0.4px; }
+
 /* ------------------------------- Grid --------------------------------- */
 .grid {
   display: grid;
@@ -307,10 +390,12 @@ h1 {
   .grid { grid-template-columns: 1fr; }
   .pnl { grid-row: auto; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
+  .company-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 620px) {
   .kpis { grid-template-columns: 1fr; }
   .feed { grid-template-columns: 1fr; }
+  .company-grid { grid-template-columns: 1fr; }
   .day-progress { margin-left: 0; width: 100%; }
   .header-right { width: 100%; justify-content: space-between; }
 }

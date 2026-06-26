@@ -1,11 +1,36 @@
-# Evangeline Home Center — Live P&L Dashboard
+# Evangeline Holdings — Live P&L Portfolio Dashboard
 
-A clean, executive dashboard that shows **Evangeline Home Center's Profit &
-Loss live throughout the business day**. Sales tick in through the day, and the
-P&L statement, KPIs, charts, and a live sales feed all update in real time.
+A clean, executive dashboard for a **portfolio of companies owned by one person**.
+The home page shows one **live widget per company**; click any widget to drill
+into that company's **full Profit & Loss, live throughout the business day**.
+Sales tick in through the day and every company's P&L statement, KPIs, charts,
+and sales feed all update in real time.
 
 Built as a **single static site** — no backend, no setup, no login. Open it and
 the day starts playing.
+
+## Renaming the companies / owner
+
+Open [`dashboard.js`](./dashboard.js) and edit the block near the top marked
+**`/* ===== EDIT ME ===== */`**:
+
+- `OWNER` — the portfolio / owner name shown in the header.
+- `COMPANIES` — the six companies. `name`, `type` and `color` are cosmetic;
+  `txnScale` (how busy), `ticketScale` (average sale size), `marginShift`
+  (profit margin up/down) and `opex` (daily operating expenses) shape each
+  company's numbers so the portfolio looks varied and realistic.
+
+Add or remove entries from `COMPANIES` and the home page grid adjusts itself.
+
+## Connecting real data (e.g. QuickBooks)
+
+These are demo figures. QuickBooks **Desktop** has no cloud API — its data
+lives in a local company file — so live data needs a small bridge on the
+Windows PC (the **QuickBooks Web Connector**, or a connector service such as
+**Conductor / Codat / Rutter**) that syncs every few minutes. QuickBooks
+**Online** has a real API and is much easier. Either way, the integration point
+is `buildDay()` in `dashboard.js`: replace it with a per-company feed and the
+rest of the dashboard keeps working unchanged.
 
 > **Demo data.** All figures are *simulated*. The dashboard generates a
 > realistic full day of sales for the store (seeded by the calendar date, so a
