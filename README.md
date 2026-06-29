@@ -15,10 +15,13 @@ Open [`dashboard.js`](./dashboard.js) and edit the block near the top marked
 **`/* ===== EDIT ME ===== */`**:
 
 - `OWNER` — the portfolio / owner name shown in the header.
-- `COMPANIES` — the six companies. `name`, `type` and `color` are cosmetic;
-  `txnScale` (how busy), `ticketScale` (average sale size), `marginShift`
-  (profit margin up/down) and `opex` (daily operating expenses) shape each
-  company's numbers so the portfolio looks varied and realistic.
+- `COMPANIES` — the list of companies. `name`, `type`, `mark` and `color` are
+  cosmetic; `txnScale` (how busy), `ticketScale` (average sale size),
+  `marginShift` (profit margin up/down) and `opex` (daily operating expenses)
+  shape each company's numbers. A company may also define its own `depts`
+  (revenue lines, used by non-retail businesses like insurance or finance) and
+  a `cogsLabel` (e.g. "Cost of Funds"); companies without `depts` use the
+  retail `DEPARTMENTS` list.
 
 Add or remove entries from `COMPANIES` and the home page grid adjusts itself.
 

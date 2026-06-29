@@ -21,19 +21,60 @@
 
 const OWNER = "Evangeline Holdings";
 
+// Revenue lines for the non-retail companies (the three Home Centers use the
+// retail DEPARTMENTS defined further below). Each line: weight = share of
+// transactions, margin = gross margin, avg = typical ticket, color = chart slice.
+const INSURANCE_LINES = [
+  { id: "auto",       name: "Auto Policies",   weight: 30, margin: 0.82, avg: 110, color: "#4f6bed" },
+  { id: "home",       name: "Homeowners",      weight: 22, margin: 0.80, avg: 160, color: "#3fae6b" },
+  { id: "life",       name: "Life",            weight: 14, margin: 0.85, avg: 240, color: "#e0567a" },
+  { id: "commercial", name: "Commercial",      weight: 16, margin: 0.78, avg: 520, color: "#f0a93b" },
+  { id: "health",     name: "Health",          weight: 18, margin: 0.80, avg: 130, color: "#8a63d2" },
+];
+const RENTAL_LINES = [
+  { id: "equip",   name: "Equipment Rental",  weight: 34, margin: 0.62, avg: 95,  color: "#b07d4e" },
+  { id: "tools",   name: "Tool Rental",       weight: 26, margin: 0.66, avg: 45,  color: "#4f6bed" },
+  { id: "vehicle", name: "Vehicle & Trailer", weight: 14, margin: 0.55, avg: 130, color: "#1fa6c4" },
+  { id: "party",   name: "Party & Event",     weight: 16, margin: 0.60, avg: 180, color: "#e0567a" },
+  { id: "storage", name: "Storage",           weight: 10, margin: 0.75, avg: 120, color: "#3fae6b" },
+];
+const FINANCE_LINES = [
+  { id: "personal", name: "Personal Loans",  weight: 30, margin: 0.72, avg: 180, color: "#8a63d2" },
+  { id: "auto",     name: "Auto Loans",      weight: 24, margin: 0.70, avg: 260, color: "#4f6bed" },
+  { id: "title",    name: "Title Loans",     weight: 18, margin: 0.78, avg: 150, color: "#f0a93b" },
+  { id: "fees",     name: "Fees & Charges",  weight: 16, margin: 0.85, avg: 90,  color: "#3fae6b" },
+  { id: "interest", name: "Interest Income", weight: 12, margin: 0.80, avg: 220, color: "#e0567a" },
+];
+const OPPZONE_LINES = [
+  { id: "rental",  name: "Rental Income",       weight: 46, margin: 0.55, avg: 900,  color: "#3fae6b" },
+  { id: "sales",   name: "Property Sales",      weight: 6,  margin: 0.30, avg: 5000, color: "#c25a4a" },
+  { id: "dev",     name: "Development Fees",    weight: 16, margin: 0.50, avg: 1500, color: "#b07d4e" },
+  { id: "mgmt",    name: "Management Fees",     weight: 22, margin: 0.70, avg: 650,  color: "#4f6bed" },
+  { id: "credits", name: "Tax Credit Proceeds", weight: 10, margin: 0.85, avg: 1800, color: "#f0a93b" },
+];
+
 const COMPANIES = [
-  { id: "homecenter", name: "Evangeline Home Center", type: "Home Improvement",
-    color: "#1f7a4d", txnScale: 1.00, ticketScale: 1.00, marginShift:  0.00, opex: 9450 },
-  { id: "lumber",     name: "Evangeline Lumber & Supply", type: "Lumber Yard",
-    color: "#b07d4e", txnScale: 0.60, ticketScale: 2.20, marginShift: -0.07, opex: 8200 },
-  { id: "rental",     name: "Evangeline Tool Rental", type: "Equipment Rental",
-    color: "#1fa6c4", txnScale: 0.50, ticketScale: 0.70, marginShift:  0.30, opex: 3600 },
-  { id: "garden",     name: "Evangeline Garden & Nursery", type: "Garden Center",
-    color: "#3fae6b", txnScale: 0.72, ticketScale: 0.80, marginShift:  0.07, opex: 4300 },
-  { id: "paint",      name: "Evangeline Paint & Décor", type: "Paint & Flooring",
-    color: "#e0567a", txnScale: 0.55, ticketScale: 1.05, marginShift:  0.10, opex: 3800 },
-  { id: "hardware",   name: "Evangeline Hardware Express", type: "Neighborhood Hardware",
-    color: "#4f6bed", txnScale: 0.85, ticketScale: 0.45, marginShift:  0.03, opex: 4200 },
+  // Three Home Center locations (retail — they use the DEPARTMENTS list below).
+  { id: "hc_carencro",  name: "Evangeline Home Center / Carencro",   type: "Home Improvement · Carencro",
+    mark: "C",  color: "#1f7a4d", txnScale: 1.00, ticketScale: 1.00, marginShift: 0, opex: 9450 },
+  { id: "hc_opelousas", name: "Evangeline Home Center / Opelousas",  type: "Home Improvement · Opelousas",
+    mark: "O",  color: "#2e8b57", txnScale: 0.82, ticketScale: 0.95, marginShift: 0, opex: 8200 },
+  { id: "hc_panama",    name: "Evangeline Home Center / Panama City", type: "Home Improvement · Panama City",
+    mark: "PC", color: "#0e7c86", txnScale: 1.12, ticketScale: 1.05, marginShift: 0, opex: 10400 },
+
+  // Non-retail companies (each with its own revenue lines + cost label).
+  { id: "insurance", name: "Evangeline Insurance", type: "Insurance Agency",
+    mark: "IN", color: "#4f6bed", depts: INSURANCE_LINES, txnScale: 0.16, ticketScale: 1, marginShift: 0,
+    opex: 5200, cogsLabel: "Producer & Carrier Costs" },
+  { id: "rentals", name: "Evangeline Rentals", type: "Equipment Rental",
+    mark: "RE", color: "#b07d4e", depts: RENTAL_LINES, txnScale: 0.22, ticketScale: 1, marginShift: 0,
+    opex: 4200, cogsLabel: "Equipment & Maintenance" },
+  { id: "finance", name: "A&A Finance", type: "Consumer Finance",
+    mark: "AF", color: "#8a63d2", depts: FINANCE_LINES, txnScale: 0.13, ticketScale: 1, marginShift: 0,
+    opex: 5200, cogsLabel: "Cost of Funds & Provisions" },
+  { id: "oppzone", name: "La Opp Zone", type: "Opportunity-Zone Real Estate",
+    mark: "LZ", color: "#c25a4a", depts: OPPZONE_LINES, txnScale: 0.04, ticketScale: 1, marginShift: 0,
+    opex: 6800, cogsLabel: "Property Operating Costs" },
 ];
 
 /* ------------------------- Shared business model ------------------------- */
@@ -126,12 +167,13 @@ function pickWeighted(list, weightOf, r) {
 
 function buildDay(company, base) {
   const rng = mulberry32(hashStr(company.id + "|" + dateKey(base)));
+  const depts = company.depts || DEPARTMENTS;
   const count = Math.round(STORE.txnPerDay * company.txnScale * (0.94 + rng() * 0.12));
   const txns = [];
   for (let i = 0; i < count; i++) {
     const hour = pickWeighted(HOURS, (h) => HOUR_WEIGHTS[h], rng());
     const ts = atHour(base, hour, Math.floor(rng() * 60), Math.floor(rng() * 60));
-    const dept = pickWeighted(DEPARTMENTS, (d) => d.weight, rng());
+    const dept = pickWeighted(depts, (d) => d.weight, rng());
     const isReturn = rng() < STORE.returnRate;
 
     const sizeFactor = 0.4 + rng() * 1.0 + Math.pow(rng(), 3) * 1.6;
@@ -181,15 +223,16 @@ const PF = COMPANIES.map((cfg) => {
     opexTotal: cfg.opex,
     projected: { gross, returns, net, cogs, grossProfit: net - cogs, byDept },
     projByHour: hourBuckets(txns),
-    state: blankState(),
+    state: blankState(cfg),
   };
 });
 const byId = Object.fromEntries(PF.map((p) => [p.cfg.id, p]));
 
-function blankState() {
+function blankState(company) {
+  const depts = (company && company.depts) || DEPARTMENTS;
   return {
     revealed: 0, gross: 0, returns: 0, cogs: 0, txnCount: 0,
-    byDept: Object.fromEntries(DEPARTMENTS.map((d) => [d.id, 0])),
+    byDept: Object.fromEntries(depts.map((d) => [d.id, 0])),
     hourly: new Array(HOUR_SPAN).fill(0),
     feed: [], feedDirty: true,
   };
@@ -423,7 +466,7 @@ function renderDetail(p) {
   const c = p.cfg, s = snapshot(p);
   el("d-name").textContent = c.name;
   el("d-type").textContent = c.type;
-  el("d-mark").textContent = c.name.replace(/[^A-Za-z ]/g, "").split(" ").filter(Boolean).slice(-2).map((w) => w[0]).join("").toUpperCase();
+  el("d-mark").textContent = c.mark || c.name.replace(/[^A-Za-z ]/g, "").slice(0, 2).toUpperCase();
   el("d-mark").style.background = c.color;
   document.documentElement.style.setProperty("--accent", c.color);
 
@@ -468,7 +511,7 @@ function renderPnl(p, s) {
   html += pnlRow({ label: "Gross Sales", today: s.gross, eod: proj.gross, ns });
   html += pnlRow({ label: "Less: Returns & Allowances", today: -s.returns, eod: -proj.returns, ns });
   html += pnlRow({ label: "Net Sales", today: ns, eod: proj.net, ns, kind: "strong" });
-  html += pnlRow({ label: "Cost of Goods Sold", today: -s.cogs, eod: -proj.cogs, ns });
+  html += pnlRow({ label: p.cfg.cogsLabel || "Cost of Goods Sold", today: -s.cogs, eod: -proj.cogs, ns });
   html += pnlRow({ label: "Gross Profit", today: s.grossProfit, eod: proj.grossProfit, ns, kind: "strong total" });
   html += `<tr class="pnl-section"><td colspan="4">Operating Expenses</td></tr>`;
   for (const o of p.opex) html += pnlRow({ label: o.name, today: -o.amount * prog, eod: -o.amount, ns });
@@ -484,9 +527,10 @@ function renderFeed(p) {
   if (!p.state.feedDirty) return;
   p.state.feedDirty = false;
   const feed = el("feed");
+  const depts = p.cfg.depts || DEPARTMENTS;
   const items = p.state.feed.slice(-FEED_MAX).reverse();
   feed.innerHTML = items.map((tx) => {
-    const dept = DEPARTMENTS.find((d) => d.id === tx.deptId);
+    const dept = depts.find((d) => d.id === tx.deptId) || { name: tx.deptId, color: "#9aa7b6" };
     return `<li class="feed-item${tx.isReturn ? " is-return" : ""}">
       <span class="fi-time">${fmtTime(tx.ts)}</span>
       <span class="fi-dot" style="background:${dept.color}"></span>
@@ -504,7 +548,10 @@ function updateDetailCharts(p, s) {
   dRev.data.datasets[1].data = proj;
   dRev.update("none");
 
-  dDept.data.datasets[0].data = DEPARTMENTS.map((d) => Math.max(0, p.state.byDept[d.id]));
+  const depts = p.cfg.depts || DEPARTMENTS;
+  dDept.data.labels = depts.map((d) => d.name);
+  dDept.data.datasets[0].data = depts.map((d) => Math.max(0, p.state.byDept[d.id] || 0));
+  dDept.data.datasets[0].backgroundColor = depts.map((d) => d.color);
   dDept.update("none");
 
   const np = s.netProfit;
@@ -578,7 +625,7 @@ function tick() {
 /* ------------------------------- Controls -------------------------------- */
 
 function resetAll() {
-  for (const p of PF) { p.state = blankState(); }
+  for (const p of PF) { p.state = blankState(p.cfg); }
 }
 function setMode(mode) {
   el("btn-live").classList.toggle("is-active", mode === "live");
